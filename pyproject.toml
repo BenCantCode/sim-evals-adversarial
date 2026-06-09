@@ -11,11 +11,14 @@ dependencies = [
   "isaaclab[all,isaacsim]==2.2.0",
   "tyro>=0.9.17",
   "websockets>=16.0",
+  "opencv-python==4.11.0.86"
 ]
 
 [tool.uv]
 override-dependencies = [
-  "websockets>=16.0"
+  "websockets>=16.0",
+  "flatdict==4.1.0",
+  "opencv-python-headless; sys_platform=='never'",
 ]
 
 [tool.uv.sources]
@@ -26,7 +29,7 @@ torchvision = {index = "pytorch-cu118", marker = "sys_platform == 'linux' or sys
 isaacsim = { index = "isaac" }
 real2simeval = { workspace = true }
 openpi-client = { git = "https://github.com/Physical-Intelligence/openpi.git", subdirectory = "packages/openpi-client" }
-
+    
 [[tool.uv.index]]
 name = "isaac"
 url = "https://pypi.nvidia.com"

@@ -18,26 +18,28 @@ Finally, run the evaluation script:
 python run_eval.py --episodes 10 --headless
 """
 
-import tyro
 import argparse
-import gymnasium as gym
-import torch
-import cv2
-import mediapy
 from datetime import datetime
 from pathlib import Path
+
+import cv2
+import gymnasium as gym
+import mediapy
+import torch
+import tyro
 from tqdm import tqdm
 
 from sim_evals.inference.droid_jointpos import Client as DroidJointPosClient
 
 
 def main(
-        episodes:int = 10,
-        headless: bool = True,
-        scene: int = 1,
-        ):
+    episodes: int = 10,
+    headless: bool = True,
+    scene: int = 1,
+):
     # launch omniverse app with arguments (inside function to prevent overriding tyro)
     from isaaclab.app import AppLauncher
+
     parser = argparse.ArgumentParser(description="Tutorial on creating an empty stage.")
     AppLauncher.add_app_launcher_args(parser)
     args_cli, _ = parser.parse_known_args()
@@ -47,9 +49,9 @@ def main(
     simulation_app = app_launcher.app
 
     # All IsaacLab dependent modules should be imported after the app is launched
-    import sim_evals.environments # noqa: F401
     from isaaclab_tasks.utils import parse_env_cfg
 
+    import sim_evals.environments  # noqa: F401
 
     # Initialize the env
     env_cfg = parse_env_cfg(
@@ -60,11 +62,11 @@ def main(
     )
     instruction = None
     match scene:
-        case 1:
+        case 1 | 101 | 201 | 301 | 401:
             instruction = "put the cube in the bowl"
-        case 2:
+        case 2 | 102 | 202 | 302 | 402:
             instruction = "put the can in the mug"
-        case 3 | 103:
+        case 3 | 103 | 203 | 303 | 403:
             instruction = "put banana in the bin"
         case _:
             raise ValueError(f"Scene {scene} not supported")
@@ -73,21 +75,26 @@ def main(
     env = gym.make("DROID", cfg=env_cfg)
 
     obs, _ = env.reset()
-    obs, _ = env.reset() # need second render cycle to get correctly loaded materials
+    obs, _ = env.reset()  # need second render cycle to get correctly loaded materials
     client = DroidJointPosClient()
 
-
-    video_dir = Path("runs") / datetime.now().strftime("%Y-%m-%d") / datetime.now().strftime("%H-%M-%S")
+    video_dir = (
+        Path("runs")
+        / datetime.now().strftime("%Y-%m-%d")
+        / datetime.now().strftime("%H-%M-%S")
+    )
     video_dir.mkdir(parents=True, exist_ok=True)
     video = []
     ep = 0
     max_steps = env.env.max_episode_length
     with torch.no_grad():
         for ep in range(episodes):
-            for _ in tqdm(range(max_steps), desc=f"Episode {ep+1}/{episodes}"):
+            for _ in tqdm(range(max_steps), desc=f"Episode {ep + 1}/{episodes}"):
                 ret = client.infer(obs, instruction)
                 if not headless:
-                    cv2.imshow("Right Camera", cv2.cvtColor(ret["viz"], cv2.COLOR_RGB2BGR))
+                    cv2.imshow(
+                        "Right Camera", cv2.cvtColor(ret["viz"], cv2.COLOR_RGB2BGR)
+                    )
                     cv2.waitKey(1)
                 video.append(ret["viz"])
                 action = torch.tensor(ret["action"])[None]
@@ -105,6 +112,7 @@ def main(
 
     env.close()
     simulation_app.close()
+
 
 if __name__ == "__main__":
     args = tyro.cli(main)
